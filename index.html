@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <!-- Evita que el usuario haga zoom -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Invitación de Boda</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100vw;
+            height: 100vh;
+            overflow: hidden; /* Elimina las barras de desplazamiento */
+            background-color: #000; /* Fondo negro por defecto */
+        }
+
+        /* Clase para el desvanecimiento suave de elementos */
+        .fade-transition {
+            transition: opacity 1.5s ease-in-out;
+        }
+    </style>
+</head>
+<body class="relative bg-black">
+
+    <!-- 1. VIDEO DE BUCLE (Fondo al terminar) -->
+    <!-- Opacidad 0 al inicio, en el nivel z-10 (atrás) -->
+    <video id="loop-video" class="absolute inset-0 w-full h-full object-cover opacity-0 fade-transition z-10" loop muted playsinline>
+        <source src="video_bucle.mp4" type="video/mp4">
+    </video>
+
+    <!-- 2. VIDEO PRINCIPAL -->
+    <!-- Nivel z-20 (adelante). 
+         El atributo "object-cover" asegura que no haya bordes. 
+         El atributo "poster" muestra una foto del sello de cera antes de darle play -->
+    <video id="main-video" class="absolute inset-0 w-full h-full object-cover z-20" playsinline poster="primer_fotograma.jpeg">
+        <source src="video_principal.mp4" type="video/mp4">
+    </video>
+
+    <!-- 3. BOTÓN INVISIBLE CENTRAL (Para el Sello de cera) -->
+    <div id="cover-screen" class="absolute inset-0 w-full h-full z-30 flex items-center justify-center">
+        <!-- Es transparente (bg-transparent). Tamaño de 40x40 unidades de Tailwind. 
+             Quita el resaltado azul al tocar en móviles con tap-highlight-color -->
+        <div id="seal-btn" class="w-40 h-40 cursor-pointer bg-transparent rounded-full" style="-webkit-tap-highlight-color: transparent;"></div>
+    </div>
+
+    <!-- 4. BOTÓN DE REDIRECCIÓN ("Más información") -->
+    <!-- Inicialmente oculto (opacity-0 y pointer-events-none) -->
+    <div id="action-btn-container" class="absolute bottom-12 left-0 w-full flex justify-center z-50 opacity-0 pointer-events-none fade-transition">
+        <button id="details-btn" class="px-8 py-3 bg-white bg-opacity-20 backdrop-blur-md border border-white/50 text-white text-lg rounded-full shadow-[0_0_15px_rgba(255,255,255,0.3)] hover:bg-white hover:text-black transition-all duration-300 tracking-widest uppercase text-sm">
+            Más información
+        </button>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const coverScreen = document.getElementById('cover-screen');
+            const sealBtn = document.getElementById('seal-btn');
+            const mainVideo = document.getElementById('main-video');
+            const loopVideo = document.getElementById('loop-video');
+            const actionBtnContainer = document.getElementById('action-btn-container');
+            const detailsBtn = document.getElementById('details-btn');
+
+            let buttonShown = false;
+
+            // --- A. AL TOCAR EL CENTRO DE LA PANTALLA (EL SELLO) ---
+            sealBtn.addEventListener('click', () => {
+                // 1. Cargamos el video en bucle para que esté listo en memoria
+                loopVideo.load(); 
+                
+                // 2. Eliminamos la capa invisible para que no estorbe
+                coverScreen.style.display = 'none';
+
+                // 3. Reproducimos el video principal
+                mainVideo.play().catch(err => {
+                    console.log("El navegador bloqueó la reproducción:", err);
+                });
+            });
+
+            // --- B. CONTROLAR CUÁNDO APARECE EL BOTÓN "MÁS INFORMACIÓN" ---
+            mainVideo.addEventListener('timeupdate', () => {
+                // Calculamos cuántos segundos faltan para que acabe el video
+                const timeLeft = mainVideo.duration - mainVideo.currentTime;
+                
+                // ===> AQUÍ CAMBIAS EL NÚMERO (<= 3 significa 3 segundos antes del final) <===
+                if (timeLeft <= 3 && !buttonShown && mainVideo.duration > 0) {
+                    buttonShown = true;
+                    // Hacemos visible el botón y le permitimos recibir clicks
+                    actionBtnContainer.style.opacity = '1';
+                    actionBtnContainer.style.pointerEvents = 'auto'; 
+                }
+            });
+
+            // --- C. QUÉ PASA AL TERMINAR EL VIDEO PRINCIPAL ---
+            mainVideo.addEventListener('ended', () => {
+                // 1. Mostrar y darle play al video de fondo en bucle
+                loopVideo.style.opacity = '1';
+                loopVideo.play();
+                
+                // 2. Desvanecer suavemente el video principal para revelar el bucle que está debajo
+                mainVideo.classList.add('fade-transition');
+                mainVideo.style.opacity = '0';
+                
+                // 3. Apagar el video principal por completo luego de que termine la animación
+                setTimeout(() => {
+                    mainVideo.style.display = 'none';
+                }, 1500);
+            });
+
+            // --- D. QUÉ PASA AL TOCAR EL BOTÓN "MÁS INFORMACIÓN" ---
+            detailsBtn.addEventListener('click', () => {
+                // ===> AQUÍ PONES EL ENLACE DE TU OTRA PÁGINA <===
+                window.location.href = "https://tu-siguiente-pagina.com";
+            });
+        });
+    </script>
+</body>
+</html>
