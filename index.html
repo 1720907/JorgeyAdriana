@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Invitación de Boda Jorge y Adriana</title>
+    <title>Invitación de Boda</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         body, html {
@@ -13,17 +13,16 @@
             height: 100vh;
             overflow: hidden; 
             background-color: #000; 
-            display: flex; /* Centramos el contenido por si hay bordes en PC */
+            display: flex;
             justify-content: center;
             align-items: center;
         }
 
         .fade-transition {
-            transition: opacity 1.5s ease-in-out;
+            transition: opacity 0.8s ease-in-out;
         }
 
         /* 
-           LA MAGIA ESTÁ AQUÍ:
            Por defecto (para PC/pantallas anchas), usamos object-contain.
            Esto muestra el video completo sin recortes, dejando bordes negros a los lados.
         */
@@ -36,8 +35,8 @@
         /* 
            MEDIA QUERY PARA CELULARES:
            Si la pantalla es más alta que ancha (orientación vertical/portrait)
-           o si el ancho máximo es de 768px (típico de móviles/tablets pequeñas),
-           cambiamos a object-cover para que llene toda la pantalla sin dejar bordes.
+           o si el ancho máximo es de 768px, usamos object-cover para que 
+           llene toda la pantalla sin dejar bordes.
         */
         @media (max-width: 768px), (orientation: portrait) {
             .responsive-video {
@@ -48,27 +47,21 @@
 </head>
 <body class="relative bg-black">
 
-    <!-- 1. VIDEO DE BUCLE -->
-    <video id="loop-video" class="absolute inset-0 responsive-video opacity-0 fade-transition z-10" loop muted playsinline>
-        <source src="video_bucle.mp4" type="video/mp4">
-    </video>
-
-    <!-- 2. VIDEO PRINCIPAL -->
-    <!-- Quitamos la clase de Tailwind 'object-cover' y usamos nuestra clase 'responsive-video' -->
+    <!-- ÚNICO VIDEO PRINCIPAL -->
     <video id="main-video" class="absolute inset-0 responsive-video z-20" playsinline poster="primer_fotograma.jpeg">
         <source src="video_principal.mp4" type="video/mp4">
     </video>
 
-    <!-- 3. BOTÓN INVISIBLE CENTRAL -->
+    <!-- CAPA DEL BOTÓN INVISIBLE CENTRAL (Sello) -->
     <div id="cover-screen" class="absolute inset-0 w-full h-full z-30 flex items-center justify-center">
-        <!-- Reduje un poco el tamaño del botón para que no estorbe si el video se ve más pequeño en PC -->
         <div id="seal-btn" class="w-32 h-32 cursor-pointer bg-transparent rounded-full" style="-webkit-tap-highlight-color: transparent;"></div>
     </div>
 
-    <!-- 4. BOTÓN DE REDIRECCIÓN -->
-    <div id="action-btn-container" class="absolute bottom-12 left-0 w-full flex justify-center z-50 opacity-0 pointer-events-none fade-transition">
+    <!-- BOTÓN DE REDIRECCIÓN ("Más información") -->
+    <!-- AQUÍ CAMBIAS LA POSICIÓN: cambia 'bottom-24' por bottom-32, bottom-40, etc., si lo quieres aún más arriba -->
+    <div id="action-btn-container" class="absolute bottom-24 left-0 w-full flex justify-center z-50 opacity-0 pointer-events-none fade-transition">
         <button id="details-btn" class="px-8 py-3 bg-white bg-opacity-20 backdrop-blur-md border border-white/50 text-white text-lg rounded-full shadow-[0_0_15px_rgba(255,255,255,0.3)] hover:bg-white hover:text-black transition-all duration-300 tracking-widest uppercase text-sm">
-            Más información
+            Más detalles
         </button>
     </div>
 
@@ -77,37 +70,37 @@
             const coverScreen = document.getElementById('cover-screen');
             const sealBtn = document.getElementById('seal-btn');
             const mainVideo = document.getElementById('main-video');
-            const loopVideo = document.getElementById('loop-video');
             const actionBtnContainer = document.getElementById('action-btn-container');
             const detailsBtn = document.getElementById('details-btn');
+            
 
             let buttonShown = false;
 
             sealBtn.addEventListener('click', () => {
-                loopVideo.load(); 
                 coverScreen.style.display = 'none';
-                mainVideo.play().catch(err => console.log(err));
+                mainVideo.play().catch(err => console.log("Error de reproducción:", err));
             });
 
             mainVideo.addEventListener('timeupdate', () => {
-                const timeLeft = mainVideo.duration - mainVideo.currentTime;
-                if (timeLeft <= 3 && !buttonShown && mainVideo.duration > 0) {
+                if (!mainVideo.duration) return;
+
+                const currentTime = mainVideo.currentTime;
+                const duration = mainVideo.duration;
+                const LOOP_START_TIME = duration - 12;
+                const timeLeft = duration - currentTime;
+                
+                // Mostrar el botón cuando falten 3 segundos para el final
+                if (timeLeft <= 17 && !buttonShown) {
                     buttonShown = true;
                     actionBtnContainer.style.opacity = '1';
                     actionBtnContainer.style.pointerEvents = 'auto'; 
                 }
-            });
 
-            mainVideo.addEventListener('ended', () => {
-                loopVideo.style.opacity = '1';
-                loopVideo.play();
-                
-                mainVideo.classList.add('fade-transition');
-                mainVideo.style.opacity = '0';
-                
-                setTimeout(() => {
-                    mainVideo.style.display = 'none';
-                }, 1500);
+                // Lógica del Bucle
+                if (currentTime >= duration) {
+                    mainVideo.currentTime = LOOP_START_TIME;
+                    mainVideo.play(); 
+                }
             });
 
             detailsBtn.addEventListener('click', () => {
